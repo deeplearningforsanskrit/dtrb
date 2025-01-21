@@ -10,7 +10,19 @@ from natsort import natsorted
 from PIL import Image
 import numpy as np
 from torch.utils.data import Dataset, ConcatDataset, Subset
-from torch._utils import _accumulate
+def _accumulate(iterable, fn=lambda x, y: x + y):
+    "Return running totals"
+    # _accumulate([1,2,3,4,5]) --> 1 3 6 10 15
+    # _accumulate([1,2,3,4,5], operator.mul) --> 1 2 6 24 120
+    it = iter(iterable)
+    try:
+        total = next(it)
+    except StopIteration:
+        return
+    yield total
+    for element in it:
+        total = fn(total, element)
+        yield total
 import torchvision.transforms as transforms
 
 
@@ -51,6 +63,7 @@ class Batch_Balanced_Dataset(object):
             number_dataset = int(total_number_dataset * float(opt.total_data_usage_ratio))
             dataset_split = [number_dataset, total_number_dataset - number_dataset]
             indices = range(total_number_dataset)
+            print(dataset_split)
             _dataset, _ = [Subset(_dataset, indices[offset - length:offset])
                            for offset, length in zip(_accumulate(dataset_split), dataset_split)]
             selected_d_log = f'num total samples of {selected_d}: {total_number_dataset} x {opt.total_data_usage_ratio} (total_data_usage_ratio) = {len(_dataset)}\n'
@@ -105,8 +118,10 @@ def hierarchical_dataset(root, opt, select_data='/'):
     dataset_list = []
     dataset_log = f'dataset_root:    {root}\t dataset: {select_data[0]}'
     print(dataset_log)
+    
     dataset_log += '\n'
     for dirpath, dirnames, filenames in os.walk(root+'/'):
+        # print("hi")
         if not dirnames:
             select_flag = False
             for selected_d in select_data:
@@ -120,7 +135,7 @@ def hierarchical_dataset(root, opt, select_data='/'):
                 print(sub_dataset_log)
                 dataset_log += f'{sub_dataset_log}\n'
                 dataset_list.append(dataset)
-
+    # print(dataset_list)
     concatenated_dataset = ConcatDataset(dataset_list)
 
     return concatenated_dataset, dataset_log
@@ -142,6 +157,7 @@ class LmdbDataset(Dataset):
             self.nSamples = nSamples
 
             if self.opt.data_filtering_off:
+                print('data filtering off')
                 # for fast check or benchmark evaluation with no filtering
                 self.filtered_index_list = [index + 1 for index in range(self.nSamples)]
             else:
@@ -155,15 +171,19 @@ class LmdbDataset(Dataset):
                 see https://github.com/clovaai/deep-text-recognition-benchmark/blob/dff844874dbe9e0ec8c5a52a7bd08c7f20afe704/test.py#L137-L144
                 """
                 self.filtered_index_list = []
-                for index in range(self.nSamples):
+                for index in tqdm(range(self.nSamples)):
                     index += 1  # lmdb starts with 1
                     label_key = 'label-%09d'.encode() % index
                     label = txn.get(label_key).decode('utf-8')
-
+                    print(label)
                     if len(label) > self.opt.batch_max_length:
+                        # print("FINND")
                         # print(f'The length of the label is longer than max_length: length
+                    
                         # {len(label)}, {label} in dataset {self.root}')
+                    
                         continue
+
 
                     # By default, images containing characters which are not in opt.character are filtered.
                     # You can add [UNK] token to `opt.character` in utils.py instead of this filtering.
@@ -206,11 +226,12 @@ class LmdbDataset(Dataset):
                     img = Image.new('L', (self.opt.imgW, self.opt.imgH))
                 label = '[dummy_label]'
 
-            if not self.opt.sensitive:
-                label = label.lower()
+            # if not self.opt.sensitive:
+            #     label = label.lower()
 
             # We only train and evaluate on alphanumerics (or pre-defined character set in train.py)
             out_of_char = f'[^{self.opt.character}]'
+            print(out_of_char, label)
             label = re.sub(out_of_char, '', label)
 
         return (img, label)
