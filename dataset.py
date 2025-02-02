@@ -5,6 +5,7 @@ import six
 import math
 import lmdb
 import torch
+from tqdm import tqdm
 
 from natsort import natsorted
 from PIL import Image
@@ -40,6 +41,7 @@ class Batch_Balanced_Dataset(object):
         log.write(dashed_line + '\n')
         print(f'dataset_root: {opt.train_data}\nopt.select_data: {opt.select_data}\nopt.batch_ratio: {opt.batch_ratio}')
         log.write(f'dataset_root: {opt.train_data}\nopt.select_data: {opt.select_data}\nopt.batch_ratio: {opt.batch_ratio}\n')
+        
         assert len(opt.select_data) == len(opt.batch_ratio)
 
         _AlignCollate = AlignCollate(imgH=opt.imgH, imgW=opt.imgW, keep_ratio_with_pad=opt.PAD)
@@ -72,7 +74,7 @@ class Batch_Balanced_Dataset(object):
             log.write(selected_d_log + '\n')
             batch_size_list.append(str(_batch_size))
             Total_batch_size += _batch_size
-
+            print(_dataset, len(_dataset))
             _data_loader = torch.utils.data.DataLoader(
                 _dataset, batch_size=_batch_size,
                 shuffle=True,
@@ -135,7 +137,7 @@ def hierarchical_dataset(root, opt, select_data='/'):
                 print(sub_dataset_log)
                 dataset_log += f'{sub_dataset_log}\n'
                 dataset_list.append(dataset)
-    # print(dataset_list)
+    print(dataset_list)
     concatenated_dataset = ConcatDataset(dataset_list)
 
     return concatenated_dataset, dataset_log
@@ -175,7 +177,7 @@ class LmdbDataset(Dataset):
                     index += 1  # lmdb starts with 1
                     label_key = 'label-%09d'.encode() % index
                     label = txn.get(label_key).decode('utf-8')
-                    print(label)
+                    print(label, self.opt.batch_max_length)
                     if len(label) > self.opt.batch_max_length:
                         # print("FINND")
                         # print(f'The length of the label is longer than max_length: length

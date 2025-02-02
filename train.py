@@ -253,7 +253,7 @@ if __name__ == '__main__':
                      help='assign ratio for each selected data in the batch')
     parser.add_argument('--total_data_usage_ratio', type=str, default='1.0',
                         help='total data usage ratio, this ratio is multiplied to total number of data.')
-    parser.add_argument('--batch_max_length', type=int, default=25, help='maximum-label-length')
+    parser.add_argument('--batch_max_length', type=int, default=50, help='maximum-label-length')
     parser.add_argument('--imgH', type=int, default=32, help='the height of the input image')
     parser.add_argument('--imgW', type=int, default=100, help='the width of the input image')
     parser.add_argument('--rgb', action='store_true', help='use rgb input')
@@ -377,7 +377,8 @@ if __name__ == '__main__':
     expressions_combined = "".join(expressions.split('\n'))
     numbers_combined = "".join(numbers.split("\n"))
     vowels_combined = "".join(vowels.split("\n"))
-    opt.character= swars_combined+vyanjans_combined+ expressions_combined+numbers_combined+vowels_combined
+    udatt_anudatt_combined = "".join(udatt_anudatt.split("\n"))
+    opt.character= swars_combined+vyanjans_combined+ expressions_combined+numbers_combined+vowels_combined+udatt_anudatt_combined +" "
     
     if not opt.exp_name:
         opt.exp_name = f'{opt.Transformation}-{opt.FeatureExtraction}-{opt.SequenceModeling}-{opt.Prediction}'
