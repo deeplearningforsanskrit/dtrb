@@ -65,16 +65,14 @@ class Batch_Balanced_Dataset(object):
             number_dataset = int(total_number_dataset * float(opt.total_data_usage_ratio))
             dataset_split = [number_dataset, total_number_dataset - number_dataset]
             indices = range(total_number_dataset)
-            print(dataset_split)
             _dataset, _ = [Subset(_dataset, indices[offset - length:offset])
                            for offset, length in zip(_accumulate(dataset_split), dataset_split)]
             selected_d_log = f'num total samples of {selected_d}: {total_number_dataset} x {opt.total_data_usage_ratio} (total_data_usage_ratio) = {len(_dataset)}\n'
             selected_d_log += f'num samples of {selected_d} per batch: {opt.batch_size} x {float(batch_ratio_d)} (batch_ratio) = {_batch_size}'
-            print(selected_d_log)
+
             log.write(selected_d_log + '\n')
             batch_size_list.append(str(_batch_size))
             Total_batch_size += _batch_size
-            print(_dataset, len(_dataset))
             _data_loader = torch.utils.data.DataLoader(
                 _dataset, batch_size=_batch_size,
                 shuffle=True,
@@ -89,7 +87,6 @@ class Batch_Balanced_Dataset(object):
         Total_batch_size_log += f'{dashed_line}'
         opt.batch_size = Total_batch_size
 
-        print(Total_batch_size_log)
         log.write(Total_batch_size_log + '\n')
         log.close()
 
@@ -119,7 +116,6 @@ def hierarchical_dataset(root, opt, select_data='/'):
     """ select_data='/' contains all sub-directory of root directory """
     dataset_list = []
     dataset_log = f'dataset_root:    {root}\t dataset: {select_data[0]}'
-    print(dataset_log)
     
     dataset_log += '\n'
     for dirpath, dirnames, filenames in os.walk(root+'/'):
@@ -134,10 +130,8 @@ def hierarchical_dataset(root, opt, select_data='/'):
             if select_flag:
                 dataset = LmdbDataset(dirpath, opt)
                 sub_dataset_log = f'sub-directory:\t/{os.path.relpath(dirpath, root)}\t num samples: {len(dataset)}'
-                print(sub_dataset_log)
                 dataset_log += f'{sub_dataset_log}\n'
                 dataset_list.append(dataset)
-    print(dataset_list)
     concatenated_dataset = ConcatDataset(dataset_list)
 
     return concatenated_dataset, dataset_log
@@ -177,7 +171,6 @@ class LmdbDataset(Dataset):
                     index += 1  # lmdb starts with 1
                     label_key = 'label-%09d'.encode() % index
                     label = txn.get(label_key).decode('utf-8')
-                    print(label, self.opt.batch_max_length)
                     if len(label) > self.opt.batch_max_length:
                         # print("FINND")
                         # print(f'The length of the label is longer than max_length: length
@@ -233,7 +226,6 @@ class LmdbDataset(Dataset):
 
             # We only train and evaluate on alphanumerics (or pre-defined character set in train.py)
             out_of_char = f'[^{self.opt.character}]'
-            print(out_of_char, label)
             label = re.sub(out_of_char, '', label)
 
         return (img, label)
