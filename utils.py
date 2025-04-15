@@ -130,7 +130,6 @@ class AttnLabelConverter(object):
         batch_max_length += 1
         # additional +1 for [GO] at first step. batch_text is padded with [GO] token after [s] token.
         batch_text = torch.LongTensor(len(text), batch_max_length + 1).fill_(0)
-        print(self.dict)
         for i, t in enumerate(text):
             text = list(t)
             text.append('[s]')
